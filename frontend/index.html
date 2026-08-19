@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Enterprise Knowledge Assistant</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- =========================
+         SIDEBAR
+    ========================== -->
+
+    <aside class="sidebar">
+
+        <div class="logo">
+            <div class="logo-icon">🧠</div>
+
+            <div>
+                <h2>Enterprise AI</h2>
+                <span>Knowledge Assistant</span>
+            </div>
+        </div>
+
+
+        <button class="new-chat-btn">
+            + New Conversation
+        </button>
+
+
+        <div class="sidebar-section">
+
+            <p class="section-title">
+                SYSTEM STATUS
+            </p>
+
+            <div class="status-item">
+                <span class="status-dot"></span>
+                <span>Ollama</span>
+                <small>Online</small>
+            </div>
+
+            <div class="status-item">
+                <span class="status-dot"></span>
+                <span>Neo4j</span>
+                <small>Connected</small>
+            </div>
+
+            <div class="status-item">
+                <span class="status-dot"></span>
+                <span>ChromaDB</span>
+                <small>Ready</small>
+            </div>
+
+        </div>
+
+
+        <div class="sidebar-bottom">
+
+            <p>Hybrid RAG System</p>
+
+            <span>
+                Graph + Vector Search
+            </span>
+
+        </div>
+
+    </aside>
+
+
+    <!-- =========================
+         MAIN CONTENT
+    ========================== -->
+
+    <main class="main-content">
+
+        <!-- HEADER -->
+
+        <header class="topbar">
+
+            <div>
+                <h1>Enterprise Knowledge Assistant</h1>
+
+                <p>
+                    Ask questions about your company knowledge
+                </p>
+            </div>
+
+            <div class="connection-status">
+                <span class="status-dot"></span>
+                System Ready
+            </div>
+
+        </header>
+
+
+        <!-- =========================
+             CHAT AREA
+        ========================== -->
+
+        <section class="chat-container">
+
+            <div class="welcome-card">
+
+                <div class="welcome-icon">
+                    ✨
+                </div>
+
+                <h2>
+                    Welcome to your Enterprise Knowledge Assistant
+                </h2>
+
+                <p>
+                    Ask questions about people, projects,
+                    departments, technologies and processes.
+                </p>
+
+                <div class="example-questions">
+
+                    <button>
+                        Who works on Project Alpha?
+                    </button>
+
+                    <button>
+                        Which technologies does Project Alpha use?
+                    </button>
+
+                    <button>
+                        Who manages Project Beta?
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <!-- CHAT MESSAGES -->
+
+            <div id="chatMessages">
+
+                <!-- Messages will appear here -->
+
+            </div>
+
+        </section>
+
+
+        <!-- =========================
+             DOCUMENT UPLOAD
+        ========================== -->
+
+        <section class="upload-section">
+
+            <div class="upload-box">
+
+                <div class="upload-icon">
+                    📄
+                </div>
+
+                <div class="upload-info">
+
+                    <h3>
+                        Upload Company Document
+                    </h3>
+
+                    <p>
+                        Upload PDF or TXT files to add
+                        knowledge to the system.
+                    </p>
+
+                </div>
+
+                <input
+                    type="file"
+                    id="fileInput"
+                    accept=".pdf,.txt"
+                    hidden
+                >
+
+                <button
+                    class="upload-btn"
+                    onclick="document.getElementById('fileInput').click()"
+                >
+                    Choose File
+                </button>
+
+            </div>
+
+        </section>
+
+
+        <!-- =========================
+             CHAT INPUT
+        ========================== -->
+
+        <section class="input-section">
+
+            <div class="chat-input-wrapper">
+
+                <textarea
+                    id="questionInput"
+                    placeholder="Ask something about your company knowledge..."
+                    rows="1"
+                ></textarea>
+
+                <button
+                    id="sendButton"
+                    class="send-btn"
+                >
+                    ➤
+                </button>
+
+            </div>
+
+            <p class="input-hint">
+                Hybrid RAG uses both Graph Search and Vector Search
+                to find relevant information.
+            </p>
+
+        </section>
+
+    </main>
+
+
+    <script src="script.js"></script>
+
+</body>
+
+</html>
