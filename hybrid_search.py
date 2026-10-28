@@ -1,49 +1,37 @@
-import os
 
+import os
 import chromadb
 from dotenv import load_dotenv
 from neo4j import GraphDatabase
 from sentence_transformers import SentenceTransformer
 
-
-# ==========================================
-# 1. Load environment variables
-# ==========================================
-
+# Load environment variables
 load_dotenv()
 
 URI = os.getenv("NEO4J_URI")
 USERNAME = os.getenv("NEO4J_USERNAME")
 PASSWORD = os.getenv("NEO4J_PASSWORD")
 
-
-# ==========================================
-# 2. ChromaDB connection
-# ==========================================
-
+# Connect to ChromaDB
 chroma_client = chromadb.PersistentClient(
     path="./chroma_db"
 )
 
-collection = chroma_client.get_collection(
+collection = chroma_client.get_or_create_collection(
     name="company_documents"
 )
 
-
-# ==========================================
-# 3. Embedding model
-# ==========================================
-
+# Load embedding model
 embedding_model = SentenceTransformer(
     "all-MiniLM-L6-v2"
 )
 
 
-# ==========================================
-# 4. Vector Search
-# ==========================================
-
+# Vector Search
 def vector_search(question):
+    if collection.count() == 0:
+        print("ChromaDB has no documents.")
+        return []
 
     query_embedding = embedding_model.encode(
         question
@@ -51,151 +39,111 @@ def vector_search(question):
 
     results = collection.query(
         query_embeddings=[query_embedding],
-        n_results=3
+        n_results=min(3, collection.count())
     )
 
-    documents = results.get(
-        "documents",
-        [[]]
-    )[0]
-
-    return documents
+    return results.get("documents", [[]])[0]
 
 
-# ==========================================
-# 5. Graph Search
-# ==========================================
-
+# Graph Search
 def graph_search(question):
+    if not URI or not USERNAME or not PASSWORD:
+        print("Neo4j settings missing. Check your .env file.")
+        return []
 
     keywords = [
-        word.strip("?!.,")
+        word.strip("?!.,:;")
         for word in question.split()
-        if len(word.strip("?!.,"))
-        > 3
+        if len(word.strip("?!.,:;")) > 3
     ]
+
+    if not keywords:
+        return []
 
     cypher = """
     MATCH (a:Entity)-[r:RELATED]->(b:Entity)
-
     WHERE any(keyword IN $keywords
-              WHERE toLower(a.name) CONTAINS toLower(keyword)
-                 OR toLower(b.name) CONTAINS toLower(keyword))
-
-    RETURN
-        a.name AS source,
-        r.type AS relationship,
-        b.name AS target
-
+        WHERE toLower(a.name) CONTAINS toLower(keyword)
+           OR toLower(b.name) CONTAINS toLower(keyword))
+    RETURN a.name AS source,
+           r.type AS relationship,
+           b.name AS target
     LIMIT 20
     """
 
     relationships = []
-
-    # Create a NEW Neo4j driver for this search
-    driver = GraphDatabase.driver(
-        URI,
-        auth=(USERNAME, PASSWORD)
-    )
+    driver = None
 
     try:
+        driver = GraphDatabase.driver(
+            URI,
+            auth=(USERNAME, PASSWORD)
+        )
+
+        driver.verify_connectivity()
 
         with driver.session() as session:
-
             result = session.run(
                 cypher,
                 keywords=keywords
             )
 
             for record in result:
-
                 relationships.append(
                     f"{record['source']} "
                     f"--[{record['relationship']}]--> "
                     f"{record['target']}"
                 )
 
-    finally:
+    except Exception as error:
+        print("Neo4j error:", error)
 
-        # Close ONLY this temporary driver
-        driver.close()
+    finally:
+        if driver is not None:
+            driver.close()
 
     return relationships
 
 
-# ==========================================
-# 6. Hybrid Search
-# ==========================================
-
+# Hybrid Search
 def hybrid_search(question):
+    print("Searching vector database...")
 
-    print("🔍 Searching Vector Database...")
+    try:
+        vector_results = vector_search(question)
+        print(f"Found {len(vector_results)} document chunks")
+    except Exception as error:
+        print("Vector search error:", error)
+        vector_results = []
 
-    vector_results = vector_search(
-        question
-    )
+    print("\nSearching knowledge graph...")
 
-    print(
-        f"✅ Found {len(vector_results)} "
-        f"relevant chunks"
-    )
+    graph_results = graph_search(question)
+    print(f"Found {len(graph_results)} relationships")
 
+    context_parts = []
 
-    print()
-    print("🕸️ Searching Knowledge Graph...")
+    if vector_results:
+        context_parts.append("DOCUMENT CONTEXT:")
+        context_parts.extend(vector_results)
 
-    graph_results = graph_search(
-        question
-    )
+    if graph_results:
+        context_parts.append("\nGRAPH CONTEXT:")
+        context_parts.extend(graph_results)
 
-    print(
-        f"✅ Found {len(graph_results)} "
-        f"relationships"
-    )
+    if not context_parts:
+        return "No relevant information found in the databases."
 
-
-    # ======================================
-    # Combine results
-    # ======================================
-
-    context = ""
-
-    context += "DOCUMENT CONTEXT:\n"
-
-    for document in vector_results:
-
-        context += "\n"
-        context += document
-        context += "\n"
+    return "\n".join(context_parts)
 
 
-    context += "\nGRAPH CONTEXT:\n"
-
-    for relationship in graph_results:
-
-        context += "\n"
-        context += relationship
-
-
-    return context
-
-
-# ==========================================
-# 7. Test Hybrid Search
-# ==========================================
-
+# Test the search
 if __name__ == "__main__":
+    question = "Who is the project manager of Project Alpha?"
 
-    question = "Who works on Project Alpha?"
+    context = hybrid_search(question)
 
-    context = hybrid_search(
-        question
-    )
-
-    print()
-    print("=" * 60)
-    print("🧠 COMBINED HYBRID CONTEXT")
-    print("=" * 60)
-    print()
-
+    print("\n" + "=" * 50)
+    print("HYBRID SEARCH RESULT")
+    print("=" * 50)
     print(context)

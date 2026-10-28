@@ -1,3 +1,4 @@
+
 import ollama
 
 from hybrid_search import hybrid_search
@@ -12,16 +13,16 @@ def generate_answer(question):
     prompt = f"""
 You are an Enterprise Knowledge Assistant.
 
-Answer the user's question using ONLY the
-information provided in the context.
+Answer the question using the provided context.
 
-If the answer is not available in the context,
-say:
-
-"I could not find this information
-in the company documents."
-
-Be clear and concise.
+Important rules:
+1. Read all the document context carefully.
+2. If the answer appears anywhere in the context,
+   give that answer directly.
+3. Combine relevant facts from document and graph context.
+4. Do not say information is missing if it is present.
+5. If the answer is genuinely absent, say:
+   "I could not find this information in the company documents."
 
 USER QUESTION:
 {question}
